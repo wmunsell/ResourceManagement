@@ -2,5 +2,5 @@
 ResourceManagement
 
 
-unfortionatly a significant about of information and functionality had to be removed. 
-this application was built for a previous company that i worked for
+unfortunately, a significant amount of information and functionality had to be removed. 
+this application was built for a previous company that I worked for
