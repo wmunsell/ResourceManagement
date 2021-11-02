@@ -1,0 +1,263 @@
+<link href="/font-awesome.min.css" rel="stylesheet" type="text/css"/>
+<link href="/style.css" rel="stylesheet" type="text/css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<title>resourcemanager</title>
+
+
+<div class="form">
+	<div class="form-content">
+    <form action="/landingFilter" autocomplete="off" method="POST">
+      <br/>
+			<div class="form-info">
+				<h2><%=user%></h2>
+      </div>
+      
+      <!-- --------------------------------------------------------------------------------------------------------------------------------- -->
+
+			<div class="form-info breakline autocomplete">
+				<h3>Filter Projects:</h3>
+				<input id="pname" class="selection" type="search" placeholder="Enter a project manager" name="pManager" value=<%=manager%>>
+      </div>
+      
+      <p>OR</p>
+      
+      <p> display all phases assoc with: </p>
+      
+			<div class="form-info">
+				<!-- <input class="selection" type="text" name="pOffice" placeholder="Office"> -->
+				<select class="selection" value="Discipline" name="pDiscipline">
+					<option value=<%=projdisc%> selected hidden><%=projdisc%></option>
+					<option value="All_Disciplines">All Disciplines</option>
+					<option value="Engineering">Engineering</option>
+					<option value="Architecture">Architecture</option>
+					<option value="Environmental">Environmental</option>
+					<option value="Surveying">Surveying</option>
+					<option value="GIS">GIS</option>
+				</select>
+      </div>
+      
+			<div class="form-info">
+				<!-- <input class="selection" type="text" name="pOffice" placeholder="Office"> -->
+				<select class="selection" value="Office" name="pOffice">
+					<option value=<%=projoffice%> selected hidden><%=projoffice%></option>
+					<option value="All_Offices">All Offices</option>
+					<option value="Allegan">Allegan</option>
+					<option value="Benton Harbor">Benton Harbor</option>
+					<option value="Kalamazoo">Kalamazoo</option>
+					<option value="Royal Oak">Royal Oak</option>
+				</select>
+      </div>
+      
+      <p>OR</p>
+      
+			<div class="form-info">
+				<input class="selection" type="search" id="pNumber" placeholder="Enter a project number" name="pNumber" value=<%=projnum%>>
+      </div>
+      
+       <!-- --------------------------------------------------------------------------------------------------------------------------------- -->
+       
+			<div class="form-info breakline">
+				<h3>Filter Employees:</h3>
+				<select class="selection" id="projDisciplines" value="testDiscipline" name="eDiscipline" required> 
+					<option value=<%=empdisc%> selected hidden><%=empdisc%></option>
+					<option value="All_Disciplines">All Disciplines</option>
+					<option value="Engineering">Engineering</option>
+					<option value="Architecture">Architecture</option>
+					<option value="Environmental">Environmental</option>
+					<option value="Surveying">Surveying</option>
+					<option value="GIS">GIS</option>
+				</select>
+      </div>
+      
+			<div class="form-info">
+				<select class="selection" id="projLocation" name="eLocation" required>
+					<option value=<%=empoffice%> selected hidden><%=empoffice%></option>
+					<option value="All_Locations">All Locations</option>
+					<option value="Allegan">Allegan</option>
+					<option value="Benton Harbor">Benton Harbor</option>
+					<option value="Kalamazoo">Kalamazoo</option>
+					<option value="Royal Oak">Royal Oak</option>
+				</select>
+      </div>
+
+      <div class="form-info">
+				<select class="multiselection" id="empSectors" name="eSector" required multiple>          
+					<option value="All_Sectors">All Sectors</option>
+					<option value="Commercial">Commercial</option>
+					<option value="Government">Government</option>
+					<option value="Education">Education</option>
+					<option value="Utilities">Utilities</option>
+				</select>
+      </div>
+      
+      <p class="warn">Caution, selecting 'All' will result in slow loading times.</p>
+      
+      <!-- --------------------------------------------------------------------------------------------------------------------------------- -->
+      
+			<div class="form-info breakline">
+				<h3>Filter Week:</h3>
+				<div class="form-info">
+					<input class="selection" id="weekpicked" type="week" name="week" required value=<%=week%>>
+				</div>
+			</div>
+
+			<div class="submit-agileits">
+				<input class="filtergo" type="submit" value="GO">
+      </div>
+      
+      <!-- --------------------------------------------------------------------------------------------------------------------------------- -->
+
+		</form>
+	</div>
+</div>
+
+<script>
+	//----------------------------------------------------
+// auto complete
+
+var values="<%= empsector %>";
+var valarray = values.split(',');
+var element = document.getElementById('empSectors');
+console.log(values);
+console.log(valarray);
+for (var i = 0; i < element.options.length; i++) {
+    element.options[i].selected = valarray.indexOf(element.options[i].value) >= 0;
+}
+
+
+
+
+var names = [];
+var numbers = [];
+
+$.ajax({
+    url: '/managers',
+    async: false,
+    success: function(data) {
+        console.log(data);
+        var count = data.length;
+        for(var i=0;i<count;i++){
+            names.push(data[i].Employee)
+            }
+        }
+    });
+
+$.ajax({
+  url: '/projnums',
+  async: false,
+  success: function(data) {
+      var count = data.length;
+      for(var i=0;i<count;i++){
+          numbers.push(data[i].projnums)
+          }
+      }
+  });
+
+function autocomplete(inp, arr) {
+  /*the autocomplete function takes two arguments,
+  the text field element and an array of possible autocompleted values:*/
+  var currentFocus;
+  /*execute a function when someone writes in the text field:*/
+  inp.addEventListener("input", function(e) {
+      var a, b, i, val = this.value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      if (!val) { return false;}
+      currentFocus = -1;
+      /*create a DIV element that will contain the items (values):*/
+      a = document.createElement("DIV");
+      a.setAttribute("id", this.id + "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      this.parentNode.appendChild(a);
+      /*for each item in the array...*/
+      for (i = 0; i < arr.length; i++) {
+        /*check if the item starts with the same letters as the text field value:*/
+        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+          /*create a DIV element for each matching element:*/
+          b = document.createElement("DIV");
+          /*make the matching letters bold:*/
+          b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+          b.innerHTML += arr[i].substr(val.length);
+          /*insert a input field that will hold the current array item's value:*/
+          b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+          /*execute a function when someone clicks on the item value (DIV element):*/
+          b.addEventListener("click", function(e) {
+              /*insert the value for the autocomplete text field:*/
+              inp.value = this.getElementsByTagName("input")[0].value;
+              /*close the list of autocompleted values,
+              (or any other open lists of autocompleted values:*/
+              closeAllLists();
+          });
+          a.appendChild(b);
+        }
+      }
+  });
+  /*execute a function presses a key on the keyboard:*/
+  inp.addEventListener("keydown", function(e) {
+      var x = document.getElementById(this.id + "autocomplete-list");
+      if (x) x = x.getElementsByTagName("div");
+      if (e.keyCode == 40) {
+        /*If the arrow DOWN key is pressed,
+        increase the currentFocus variable:*/
+        currentFocus++;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 38) { //up
+        /*If the arrow UP key is pressed,
+        decrease the currentFocus variable:*/
+        currentFocus--;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 13) {
+        /*If the ENTER key is pressed, prevent the form from being submitted,*/
+        e.preventDefault();
+        if (currentFocus > -1) {
+          /*and simulate a click on the "active" item:*/
+          if (x) x[currentFocus].click();
+        }
+      }
+  });
+  function addActive(x) {
+    /*a function to classify an item as "active":*/
+    if (!x) return false;
+    /*start by removing the "active" class on all items:*/
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+    /*add class "autocomplete-active":*/
+    x[currentFocus].classList.add("autocomplete-active");
+  }
+  function removeActive(x) {
+    /*a function to remove the "active" class from all autocomplete items:*/
+    for (var i = 0; i < x.length; i++) {
+      x[i].classList.remove("autocomplete-active");
+    }
+  }
+  function closeAllLists(elmnt) {
+    /*close all autocomplete lists in the document,
+    except the one passed as an argument:*/
+    var x = document.getElementsByClassName("autocomplete-items");
+    for (var i = 0; i < x.length; i++) {
+      if (elmnt != x[i] && elmnt != inp) {
+        x[i].parentNode.removeChild(x[i]);
+      }
+    }
+  }
+  /*execute a function when someone clicks in the document:*/
+  document.addEventListener("click", function (e) {
+      closeAllLists(e.target);
+  });
+}
+autocomplete(document.getElementById("pname"), names);
+autocomplete(document.getElementById("pNumber"), numbers);
+
+//----------------------------------------------------
+
+
+
+</script>
+
+
+

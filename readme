@@ -1,0 +1,74 @@
+notes about resourcemanager
+
+
+additional employee filters 
+
+    office section (will remove in the future)
+        field staff
+
+    // work with paul on the following
+    sectors
+        major sectors
+    sub-sectors
+    // ---------------------------
+
+    additional drop down
+        professional 
+        field
+        intern
+        (able to select multiple)
+
+
+
+resourcemanager app
+	project status page?
+	future opportunities?
+	notifications of schedule changes to those affected. 
+	filtered view of selected staff and projects with scheduled time
+		remove all projects that dont have time associated to them 
+	admin account/read only account
+	add client column
+	tasked based scheduling? tasks instead of time or both. 
+	tracker?
+		who entered time and for who?
+
+ todo:
+	add client column
+	    add additional column to auto update tool
+	filtered view of selected staff and projects with scheduled time
+	    remove all projects that dont have time associated to them 
+	Contact Brian about auto update on x4
+	add sector filter on home page	
+		employees
+		
+Ajera:
+	clunky 
+	not widly used
+	unable to view/manipulate data
+		FME chart/clacs
+	
+
+buisness dev app
+	interactive
+	trackable
+	sinc with calandars
+		send invites to others
+	send updates, notifications
+	project/task teams
+	simplifies data entry
+	real time data connetion 
+		auto populate numbers potentially
+		
+		
+		
+		
+		
+		
+		
+FME (today) 
+rnd 5 leads. (April) 
+
+department
+practice Area
+office
+sector

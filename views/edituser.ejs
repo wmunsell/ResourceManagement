@@ -1,0 +1,140 @@
+<script src="js/jexcel.js"></script>
+<script src="https://bossanova.uk/jsuites/v2/jsuites.js"></script>
+<link rel="stylesheet" href="css/jsuites.css" type="text/css" />
+<link rel="stylesheet" href="https://bossanova.uk/jexcel/v4/jexcel.css" type="text/css" />
+
+<link href="style.css" rel="stylesheet" type="text/css"/>
+
+<script type="text/javascript"src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<script>let jsonObj = {};</script>
+
+<title>resourcemanager</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="css/style.css">
+
+<div class="wrapper d-flex align-items-stretch ">
+    <nav id="sidebar" class="active">
+        <div class="custom-menu">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="fa fa-bars"></i>
+                <span class="sr-only">Toggle Menu</span>
+            </button>
+        </div>
+        <h1><a href="/auth/outlook" class="logo">Home</a></h1>
+        <ul class="list-unstyled components mb-5">
+        <li>
+            <a href="schedule"><span class="fa fa-sticky-note mr-3"></span> Scheduler</a>
+        </li>
+        <li>
+            <a href="weeklymatrix"><span class="fa fa-sticky-note mr-3"></span> Weekly Matrix</a>
+        </li>
+        <li>
+            <a href="EmployeeSearch"><span class="fa fa-sticky-note mr-3"></span> Employee Search</a>
+        </li>
+        <li>
+            <a href="FTEGraph"><span class="fa fa-sticky-note mr-3"></span> FTE Graph</a>
+        </li>
+        <li>
+            <a href="emailer"><span class="fa fa-sticky-note mr-3"></span> Submit Ticket</a>
+        </li>
+        <li>
+            <a href="/auth/logout" class="bottom"><span class="fa fa-sticky-note mr-3"></span> Logout</a>
+        </li>
+        </ul>
+    </nav>
+    <div id="content" class="p-4 p-md-5 pt-5">
+        <!-- <input type='button' value='Sort column' onclick="myTable.hideIndex()"> -->
+        <div class="chartbody">
+            <h1 class="mainhead">Employees</h1>
+            <p>Edit Employee</p>
+            <div class="chartitem" id="editemp"></div>
+            <br/>
+            <div class="Submit chartitem"><button onclick=Submit();>Submit Changes</button></div>
+        </div> 
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script type="text/javascript" >
+
+    function Submit(){
+        var numRows = myTable.options.data.length;
+        var i;
+        for (i = 0; i < numRows; i++) {
+            try{
+
+                var row = myTable.getRowData(i);
+                $.ajax({
+                    url: '/updateemployee',
+                    type: 'POST',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data: JSON.stringify({row:row}),
+                });     
+
+            }catch(err){
+                console.log(err);
+            }
+        }
+    location.reload();
+    }
+    
+    var myTable = jexcel(document.getElementById('editemp'), {
+        url: '/getuser',
+        columns: [
+            {
+                type: 'text',
+                title:'Employee',
+                width:150
+            },
+            {
+                type: 'dropdown',
+                title:'Department',
+                width:150,
+                source:[
+                    "Engineering",
+                    "Architecture",
+                    "Environmental",
+                    "GIS",
+                    "Survey",
+                    // (...)
+                ]
+            },
+            {
+                type: 'dropdown',
+                title:'Office',
+                width:150,
+                source:[
+                    "Kalamazoo",
+                    "Benton Harbor",
+                    "Allegan",
+                    "Royal Oak",
+                    // (...)
+                ]
+            },
+            {
+                type: 'dropdown',
+                title:'Sectors',
+                width:150,
+                source:[
+                    "Commercial",
+                    "Government",
+                    "Education",
+                    "Utilities",
+                    // (...)
+                ],
+                multiple:true
+            },
+            {
+                type: 'percent',
+                title:'Utilization',
+                mask:'% #',
+                width:80,
+            },
+        ]
+    });
+</script>

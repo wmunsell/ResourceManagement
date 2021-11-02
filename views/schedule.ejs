@@ -1,0 +1,536 @@
+<script src="js/jexcel.js"></script>
+<script src="https://bossanova.uk/jsuites/v2/jsuites.js"></script>
+<link rel="stylesheet" href="css/jsuites.css" type="text/css" />
+<link rel="stylesheet" href="https://bossanova.uk/jexcel/v4/jexcel.css" type="text/css" />
+
+<link href="/style.css" rel="stylesheet" type="text/css"/>
+
+<script type="text/javascript"src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<script>let jsonObj = {};</script>
+
+<title>resourcemanager</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="css/style.css">
+
+
+<div class="wrapper d-flex align-items-stretch ">
+    <nav id="sidebar" class="active">
+        <div class="custom-menu">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="fa fa-bars"></i>
+                <span class="sr-only">Toggle Menu</span>
+            </button>
+        </div>
+        <h1><a href="/auth/outlook" class="logo">Home</a></h1>
+        <ul class="list-unstyled components mb-5">
+        <li>
+            <a href="weeklymatrix"><span class="fa fa-sticky-note mr-3"></span> Weekly Matrix</a>
+        </li>
+        <li>
+            <a href="EmployeeSearch"><span class="fa fa-sticky-note mr-3"></span> Employee Search</a>
+        </li>
+        <li>
+            <!-- <a href="FTEGraph.html"><span class="fa fa-sticky-note mr-3"></span> FTE Graph</a> -->
+            <a href="FTEGraph"><span class="fa fa-sticky-note mr-3"></span> FTE Graph</a>
+        </li>
+        <li>
+            <a href="edituser"><span class="fa fa-sticky-note mr-3"></span> Edit User</a>
+        </li>
+        <br/>
+        <li>
+            <input class="fa mr-3 employeeSelection" id="weekpicked" type="week" name="week">
+            <button class="fa mr-3 employeeSelection" onclick=Update();>Update</button>
+        </li>
+        <li>
+            <a href="emailer"><span class="fa fa-sticky-note mr-3"></span> Submit Ticket</a>
+        </li>
+        <li>
+            <a href="/auth/logout" class="bottom"><span class="fa fa-sticky-note mr-3"></span> Logout</a>
+        </li>
+        </ul>
+    </nav>
+    <div class="chartouter center">
+        <div class="chartmiddle">
+            <!-- <input type='button' value='Sort column' onclick="myTable.hideIndex()"> -->
+            <div class="chartinner">
+                <h1 class="mainhead">Scheduler</h1>
+                <p id="dateRange" class="dateRange"></p>
+            </div>
+            <div class="chartinner">
+                <div class="autocomplete">
+                    <input id="enam" type="text" name="empname" placeholder="Employee Name">
+                </div>
+                <div class="autocomplete">
+                    <input id="pnum" type="text" name="pnumber" placeholder="Project Number">
+                </div>
+            </div>
+            <br/>
+            <div class="chartinner Submit">
+                <button onclick=GenTable();>GO</button>
+                <!-- <button onclick=Reset();>Reset</button> -->
+            </div>
+            <br/>
+            <div class="chartinner" id="etable"></div>
+            <br/>
+            <div class="chartinner Submit">
+                <button onclick=SubmitHours();>Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script  type="text/javascript" >
+//----------------------------------------------------
+// auto complete
+
+var names = [];
+var numbers = [];
+
+$.ajax({
+    url: '/employees',
+    async: false,
+    success: function(data) {
+        var count = data.length;
+        for(var i=0;i<count;i++){
+            names.push(data[i].Employee)
+            }
+        }
+    });
+
+$.ajax({
+    url: '/projnums',
+    async: false,
+    success: function(data) {
+        var count = data.length;
+        for(var i=0;i<count;i++){
+            numbers.push(data[i].projnums)
+            }
+        }
+    });
+
+
+function autocomplete(inp, arr) {
+  /*the autocomplete function takes two arguments,
+  the text field element and an array of possible autocompleted values:*/
+  var currentFocus;
+  /*execute a function when someone writes in the text field:*/
+  inp.addEventListener("input", function(e) {
+      var a, b, i, val = this.value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      if (!val) { return false;}
+      currentFocus = -1;
+      /*create a DIV element that will contain the items (values):*/
+      a = document.createElement("DIV");
+      a.setAttribute("id", this.id + "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      this.parentNode.appendChild(a);
+      /*for each item in the array...*/
+      for (i = 0; i < arr.length; i++) {
+        /*check if the item starts with the same letters as the text field value:*/
+        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+          /*create a DIV element for each matching element:*/
+          b = document.createElement("DIV");
+          /*make the matching letters bold:*/
+          b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+          b.innerHTML += arr[i].substr(val.length);
+          /*insert a input field that will hold the current array item's value:*/
+          b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+          /*execute a function when someone clicks on the item value (DIV element):*/
+          b.addEventListener("click", function(e) {
+              /*insert the value for the autocomplete text field:*/
+              inp.value = this.getElementsByTagName("input")[0].value;
+              /*close the list of autocompleted values,
+              (or any other open lists of autocompleted values:*/
+              closeAllLists();
+          });
+          a.appendChild(b);
+        }
+      }
+  });
+  /*execute a function presses a key on the keyboard:*/
+  inp.addEventListener("keydown", function(e) {
+      var x = document.getElementById(this.id + "autocomplete-list");
+      if (x) x = x.getElementsByTagName("div");
+      if (e.keyCode == 40) {
+        /*If the arrow DOWN key is pressed,
+        increase the currentFocus variable:*/
+        currentFocus++;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 38) { //up
+        /*If the arrow UP key is pressed,
+        decrease the currentFocus variable:*/
+        currentFocus--;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 13) {
+        /*If the ENTER key is pressed, prevent the form from being submitted,*/
+        e.preventDefault();
+        if (currentFocus > -1) {
+          /*and simulate a click on the "active" item:*/
+          if (x) x[currentFocus].click();
+        }
+      }
+  });
+  function addActive(x) {
+    /*a function to classify an item as "active":*/
+    if (!x) return false;
+    /*start by removing the "active" class on all items:*/
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+    /*add class "autocomplete-active":*/
+    x[currentFocus].classList.add("autocomplete-active");
+  }
+  function removeActive(x) {
+    /*a function to remove the "active" class from all autocomplete items:*/
+    for (var i = 0; i < x.length; i++) {
+      x[i].classList.remove("autocomplete-active");
+    }
+  }
+  function closeAllLists(elmnt) {
+    /*close all autocomplete lists in the document,
+    except the one passed as an argument:*/
+    var x = document.getElementsByClassName("autocomplete-items");
+    for (var i = 0; i < x.length; i++) {
+      if (elmnt != x[i] && elmnt != inp) {
+        x[i].parentNode.removeChild(x[i]);
+      }
+    }
+  }
+  /*execute a function when someone clicks in the document:*/
+  document.addEventListener("click", function (e) {
+      closeAllLists(e.target);
+  });
+}
+autocomplete(document.getElementById("enam"), names);
+autocomplete(document.getElementById("pnum"), numbers);
+//----------------------------------------------------
+function Update(){ 
+    var newDate = document.getElementById("weekpicked").value;
+    $.ajax({
+        url: '/newDate',
+        type: 'POST',
+        dataType: "json",
+        data: {date: newDate},
+    }); 
+    location.reload();
+}
+
+function getDateOfISOWeek(weekNo) {
+    Date.prototype.getWeek = function () {
+        var target  = new Date(this.valueOf());
+        var dayNr   = (this.getDay() + 6) % 7;
+        target.setDate(target.getDate() - dayNr + 3);
+        var firstThursday = target.valueOf();
+        target.setMonth(0, 1);
+        if (target.getDay() != 4) {
+            target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+        }
+        return 1 + Math.ceil((firstThursday - target) / 604800000);
+    };
+
+    var d1 = new Date();
+    numOfdaysPastSinceLastMonday = eval(d1.getDay()- 1);
+    d1.setDate(d1.getDate() - numOfdaysPastSinceLastMonday);
+    var weekNoToday = d1.getWeek();
+    var weeksInTheFuture = eval( weekNo - weekNoToday );
+    d1.setDate(d1.getDate() + eval( 7 * weeksInTheFuture ));
+    var rangeIsFrom = eval(d1.getMonth()+1) +"/" + d1.getDate() + "/" + d1.getFullYear();
+    d1.setDate(d1.getDate() + 6);
+    var rangeIsTo = eval(d1.getMonth()+1) +"/" + d1.getDate() + "/" + d1.getFullYear() ;
+    document.getElementById("dateRange").innerHTML = "Currently viewing the project schedule for " + rangeIsFrom + " through " + rangeIsTo;
+    return
+}
+var curweeknum;
+$.ajax({
+    url: '/dateRange',
+    success: function(data) {
+        weekpicked = data;
+        var yearweek = data.split("-W");
+        var y = yearweek[0];
+        var w = yearweek[1];
+        curweeknum = w;
+        getDateOfISOWeek(w);
+        }
+    });
+
+var loaded = function(instance, obj) {
+    obj.hideIndex();
+    var count = headers.length; 
+    for(var i=7;i<=count;i++){
+        obj.headers[i].classList.add('employee');
+    }
+    obj.columns[2].classList.add('phasetitle');
+}
+
+function Reset(){
+    location.reload();
+}
+
+var cols = [];
+var employee;
+var myTable; 
+
+function GenTable(){
+    document.getElementById('etable').innerHTML = '';
+    var eName = document.getElementById("enam").value;
+    var eNum = document.getElementById("pnum").value;
+
+    var headers = [
+        {
+            type: 'hidden',
+            title:'Phase ID',
+            width:10
+        }, 
+        {
+            type: 'hidden',
+            title:'Project Name',
+            width:250
+        }, 
+        {
+            type: 'text',
+            title:'Project Number',
+            width:130
+        },
+        {
+            type: 'text',
+            title:'Project Phase',
+            width:475,
+        },
+        {
+            type: 'text',
+            title:'Start Date',
+            width:150
+        },
+        {
+            type: 'text',
+            title:'End Date',
+            width:150
+        },
+        {
+            type: 'numeric',
+            title:'Budget Hours',
+            width:120
+        },
+    ];
+
+    $.ajax({
+        url: '/schprojnumber',
+        type: 'POST',
+        async: false,
+        dataType: "json",
+        data: {number: eNum},
+    });
+
+    $.ajax({
+        url: '/ename',
+        type: 'POST',
+        async: false,
+        dataType: "json",
+        data: {name: eName},
+    });
+
+/*     $.ajax({
+        url: '/durration',
+        type: 'POST',
+        async: false,
+        dataType: "json",
+        data: {number: eNum},
+    }); */
+
+    $.ajax({
+    url: '/searchHeader',
+    async: false,
+    success: function(data) {
+        employee = data;
+        }
+    });
+
+    for(var i=0; i<6; i++){
+        var weekno = parseInt(curweeknum)+i;
+        if(weekno>52){
+            weekno = weekno-52;
+        }
+        
+        var title = 'W-' + weekno;
+
+        cols.push(title);
+
+        headers.push(
+            {
+                type: 'numeric',
+                title: title,
+                width: 50
+            }
+        )
+    }
+
+    myTable = jexcel(document.getElementById('etable'), {
+        url: '/employee_gantt_data',
+        columns: headers,
+/*         onload: loaded, */
+        columnResize:false,
+        nestedHeaders:[
+/*                 {
+                    title: 'SCHEDULE',
+                    colspan: headers.length,
+                }, */
+                {
+                    title: 'PROJECT DATA',
+                    colspan: 5,
+                },
+/*                 {
+                    title: 'EMPLOYEE',
+                    colspan: 1,
+                }, */
+                {
+                    title: employee,
+                    colspan: 6,
+                },
+        ], 
+    });
+}
+/* ---------------------------------------------------------------------------------------------------*/
+async function geteid(empname){
+        const result = $.ajax({
+            url: '/employeeid',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({empname: empname}),
+            success: "success"
+        });
+return result;
+}
+async function getsid(empschedule){
+    const result = $.ajax({
+        url: '/scheduleid',
+        type: 'POST',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        data: JSON.stringify({schedule: empschedule}),
+        success: "success"
+    });
+return result;
+}
+async function getpkey(empschedule){
+        const result = $.ajax({
+            url: '/projectKey',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({schedule: empschedule}),
+            success: "success"
+        });
+    return result;
+}
+async function getphid(empschedule){
+    const result = $.ajax({
+        url: '/phaseID',
+        type: 'POST',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        data: JSON.stringify({schedule: empschedule}),
+        success: "success"
+    });
+return result;
+}
+async function popschedule(empschedule){
+    const result = $.ajax({
+        url: '/schedule',
+        type: 'POST',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        data: JSON.stringify({schedule: empschedule}),
+        success: "success"
+    })
+return result; 
+}
+async function pophourmap(empschedule){
+    const result = $.ajax({
+        url: '/pophourmap',
+        type: 'POST',
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        data: JSON.stringify({schedule: empschedule}),
+    });
+return result
+}
+
+async function SubmitHours(){
+    var eName = document.getElementById("enam").value;
+    var eNum = document.getElementById("pnum").value;
+    var tablecols = myTable.getHeaders().split(",");
+
+    for(name in cols){
+        var name = cols[name];
+        var colnum = tablecols.indexOf(name);
+        var employeerow = myTable.getColumnData(colnum);
+        /* var employeerow2  = myTable2.getColumnData(headerDict[name]); */
+        /* console.log(employeerow2); */ 
+        var count = employeerow.length;
+        var i;
+        for (i = 0; i < count; i++) {
+            try{
+                var item = employeerow[i];
+                if(item != ''){
+                /* if(item != ""){ */
+
+                    var employeerecord = {};
+                    var employeename = eName;
+                    var inputHours = parseInt(item);
+                    var row = i;
+
+                    var phaseid = myTable.getValueFromCoords(0, row);
+                    var phase = myTable.getValueFromCoords(3, row);
+                    var pNum = myTable.getValueFromCoords(2, row);
+
+                    employeerecord.phaseid = phaseid;
+                    employeerecord.name = employeename; 
+                    employeerecord.hours = inputHours;
+                    employeerecord.phaseName = phase;
+                    employeerecord.week = "2020-W"+(name.slice(-2));
+                    employeerecord.pnum = pNum;
+
+                    const sidResult = await getsid([employeerecord]);
+                    employeerecord.sid = sidResult;
+
+                    const eidResult = await geteid(employeename);
+                    employeerecord.eid = eidResult;
+
+                    const phidResult = await getphid([employeerecord]);
+                    employeerecord.phid = phidResult;
+
+                    const pkeyResult = await getpkey([employeerecord]);
+                    employeerecord.pkey = pkeyResult;
+
+                    const newhours = await popschedule([employeerecord]);
+                    if(employeerecord.sid == "NAN"){
+                        employeerecord.sid = newhours[0].insertId;
+                    } 
+                    
+                    $.ajax({
+                        url: '/pophourmap',
+                        type: 'POST',
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        data: JSON.stringify({schedule: employeerecord}),
+                    });                            
+                }
+            }catch(err){
+                console.log(err);
+            }
+        }
+    }
+    GenTable();
+}
+/* ---------------------------------------------------------------------------------------------------*/
+</script>

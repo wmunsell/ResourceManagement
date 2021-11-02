@@ -1,0 +1,114 @@
+<script src="js/jexcel.js"></script>
+<script src="https://bossanova.uk/jsuites/v2/jsuites.js"></script>
+<link rel="stylesheet" href="css/jsuites.css" type="text/css" />
+<link rel="stylesheet" href="https://bossanova.uk/jexcel/v4/jexcel.css" type="text/css" />
+
+<link href="/style.css" rel="stylesheet" type="text/css"/>
+
+<script type="text/javascript"src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<script>let jsonObj = {};</script>
+
+<title>resourcemanager</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="css/style.css">
+
+<div class="wrapper d-flex align-items-stretch ">
+    <nav id="sidebar" class="active">
+        <div class="custom-menu">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="fa fa-bars"></i>
+                <span class="sr-only">Toggle Menu</span>
+            </button>
+        </div>
+        <h1><a href="/auth/outlook" class="logo">Home</a></h1>
+        <ul class="list-unstyled components mb-5">
+        <li> <script></script>
+            <a href="schedule"><span class="fa fa-sticky-note mr-3"></span> Scheduler</a>
+        </li>
+        <li>
+            <a href="weeklymatrix"><span class="fa fa-sticky-note mr-3"></span> Weekly Matrix</a>
+        </li>
+        <li>
+            <a href="EmployeeSearch"><span class="fa fa-sticky-note mr-3"></span> Employee Search</a>
+        </li>
+        <li>
+            <!-- <a href="FTEGraph.html"><span class="fa fa-sticky-note mr-3"></span> FTE Graph</a> -->
+            <a href="FTEGraph"><span class="fa fa-sticky-note mr-3"></span> FTE Graph</a>
+        </li>
+        <li>
+            <a href="edituser"><span class="fa fa-sticky-note mr-3"></span> Edit User</a>
+        </li>
+        <br/>
+        <li>
+            <input class="fa mr-3 employeeSelection" id="weekpicked" type="week" name="week">
+            <button class="fa mr-3 employeeSelection" onclick=Update();>Update</button>
+        </li>
+        <li>
+            <a href="/auth/logout" class="bottom"><span class="fa fa-sticky-note mr-3"></span> Logout</a>
+        </li>
+        </ul>
+    </nav>
+    <div class="chartouter center">
+        <div class="chartmiddle"></div>
+            <div class="chartinner"> 
+                <h1 class="mainhead">Submit Ticket</h1>
+                <p>Select a ticket type and enter a short description</p>
+                <select class="ticketselect" id="tickettype" value="Request" name="Request" required>
+                    <option value="ticketType" selected hidden>Ticket Type</option>
+                    <option value="resourcemanagerFeatureRequest">Feature Request</option>
+                    <option value="resourcemanagerBug">Bug</option>
+                    <option value="resourcemanagerQuestion">Question</option>
+                </select>
+            </div>
+
+            <br/>
+            <div class="chartinner">
+                <textarea class="ticketinput" id="description" name="description" placeholder="Leave a comment" rows="4" cols="50" required></textarea>
+            </div>
+
+            <br/>
+            <div class="chartinner">
+                <button type="button" onclick="sendemail()">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script  type="text/javascript" >
+
+    async function sendemail(){
+        "use strict";
+
+        var employeename = '';
+        var employeeemail = ''; 
+        var tickettype = document.getElementById("tickettype").value;
+        var ticketmessage = document.getElementById("description").value;
+
+        $.ajax({
+        url: '/getuserinfo',
+        async: false,
+        success: function(data) {
+            employeename = data.user;
+            employeeemail = data.email;
+            }
+        });
+
+        $.ajax({
+            url: '/sendemail',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({name: employeename, email: employeeemail, type: tickettype, message: ticketmessage}),
+            success: "success"
+        });
+        
+        alert("Ticket submitted successfully");
+        location.reload();
+    }
+    
+</script>

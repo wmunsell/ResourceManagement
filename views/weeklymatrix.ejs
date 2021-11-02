@@ -1,0 +1,563 @@
+<script src="js/jexcel.js"></script>
+<script src="https://bossanova.uk/jsuites/v2/jsuites.js"></script>
+<link rel="stylesheet" href="css/jsuites.css" type="text/css" />
+<link rel="stylesheet" href="https://bossanova.uk/jexcel/v4/jexcel.css" type="text/css" />
+
+<link href="/style.css" rel="stylesheet" type="text/css"/>
+
+<script type="text/javascript"src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<script>let jsonObj = {};</script>
+
+<title>resourcemanager</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="css/style.css">
+
+<div class="wrapper d-flex align-items-stretch ">
+    <nav id="sidebar" class="active">
+        <div class="custom-menu">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="fa fa-bars"></i>
+                <span class="sr-only">Toggle Menu</span>
+            </button>
+        </div>
+        <h1><a href="/auth/outlook" class="logo">Home</a></h1>
+        <ul class="list-unstyled components mb-5">
+        <li>
+            <a href="schedule"><span class="fa fa-sticky-note mr-3"></span> Scheduler</a>
+        </li>
+        <li>
+            <a href="EmployeeSearch"><span class="fa fa-sticky-note mr-3"></span> Employee Search</a>
+        </li>
+        <li>
+            <!-- <a href="FTEGraph.html"><span class="fa fa-sticky-note mr-3"></span> FTE Graph</a> -->
+            <a href="FTEGraph"><span class="fa fa-sticky-note mr-3"></span> FTE Graph</a>
+        </li>
+        <li>
+            <a href="edituser"><span class="fa fa-sticky-note mr-3"></span> Edit User</a>
+        </li>
+        <br/>
+        <li>
+            <input class="fa mr-3 employeeSelection" id="weekpicked" type="week" name="week">
+            <button class="fa mr-3 employeeSelection" onclick=Update();>Update</button>
+        </li>
+        <li>
+            <a href="emailer"><span class="fa fa-sticky-note mr-3"></span> Submit Ticket</a>
+        </li>
+        <li>
+            <a href="/auth/logout" class="bottom"><span class="fa fa-sticky-note mr-3"></span> Logout</a>
+        </li>
+        </ul>
+    </nav>
+    <div class="chartouter center">
+        <div class="chartmiddle">
+            <!-- <input type='button' value='Sort column' onclick="myTable.hideIndex()"> -->
+            <div class="chartinner">
+                <h1 class="mainhead">Weekly Matrix</h1>
+                <p id="dateRange" class="dateRange"></p>
+            </div>
+            <div id="totals" class="chartinner"></div>
+            <br/>
+            <div class="chartinner Submit"><button onclick=Submit();>Submit</button></div>
+            <br/>
+            <div class="chartinner" id="spreadsheet"></div>
+            <br/>
+            <div class="chartinner Submit"><button onclick=Submit();>Submit</button></div>
+        </div>
+    </div>
+</div>
+<!-- -------------------------------------  -->
+
+<script src="js/main.js"></script>
+<script  type="text/javascript" >
+    // global variables --
+    var headerDict = {};
+    var total_headers = [];
+    var headers = [
+                {
+                    type: 'hidden', 
+                    title: 'phase id', 
+                    width: 10
+                },
+                 {
+                    type: 'hidden',
+                    title:'Project Name',
+                    width:250
+                }, 
+                {
+                    type: 'text',
+                    title:'Project Number',
+                    width:130
+                },
+                {
+                    type: 'text',
+                    title:'Client Name',
+                    width:300
+                },
+                {
+                    type: 'text',
+                    title:'Project Phase',
+                    width:475
+                },
+                {
+                    type: 'text',
+                    title:'Start Date',
+                    width:150
+                },
+                {
+                    type: 'text',
+                    title:'End Date',
+                    width:150
+                },
+                {
+                    type: 'numeric',
+                    title:'Budget Hours Rem',
+                    width:150
+                },
+                {
+                    type: 'text',
+                    title:'FTE',
+                    width:120
+                },
+            ];
+    var headers2 = [
+        {
+            type: 'hidden', 
+            title: 'phase id', 
+            width: 10
+        },
+        {
+            type: 'hidden',
+            title:'Project Name',
+            width:250
+        }, 
+        {
+            type: 'hidden',
+            title:'Project Number',
+            width:130
+        },
+        {
+            type: 'hidden',
+            title:'Project Phase',
+            width:400
+        },
+        {
+            type: 'hidden',
+            title:'Start Date',
+            width:150
+        },
+        {
+            type: 'hidden',
+            title:'End Date',
+            width:150
+        },
+        {
+            type: 'hidden',
+            title:'Budget Hours',
+            mask:'$ #,##.00',
+            width:120,
+            decimal:','
+        },
+        {
+            type: 'hidden',
+            title:'FTE',
+            width:120
+        },
+    ];
+    var names = [];
+    var weekpicked = "";
+    var weekpicked2 = "";
+    // -------------------
+
+    function Update(){ 
+        var newDate = document.getElementById("weekpicked").value;
+        $.ajax({
+            url: '/newDate',
+            type: 'POST',
+            dataType: "json",
+            async: false,
+            data: {date: newDate},
+        }); 
+        location.reload();
+    }
+	
+    $.ajax({
+    url: '/headers',
+    dataType: 'json',
+    async: false,
+    success: function(data) {
+        var key = 9;
+        var count = data.length;
+        for(var i=0;i<count;i++){
+            var item = data[i];
+            var head = {};
+            head.type = 'text';
+            head.title = item.name;
+            head.width = 35;
+            headers.push(head);
+            headers2.push(head);
+            total_headers.push(head);
+            names.push(item.name);
+            headerDict[item.name] = key;
+            key++;
+            }
+        }
+    });
+    $.ajax({
+    url: '/dateRange',
+    success: function(data) {
+        weekpicked = data;
+        var yearweek = data.split("-W");
+        var y = yearweek[0];
+        var w = yearweek[1];
+        getDateOfISOWeek(w);
+        }
+    });
+    var totals = ['TOTALS', 0, 0, 0, 0, 0, 0, 0];
+    $.ajax({
+    url: '/totals',
+    dataType: 'json',
+    success: function(data) {
+        for (item in data){
+            totals.push(data[item])
+        }
+        
+    }
+    });
+    function sortTables(){
+        myTable.orderBy(document.getElementById('columnNumber').value)
+        myTable2.orderBy(document.getElementById('columnNumber').value);
+    }
+    function getDateOfISOWeek(weekNo) {
+        Date.prototype.getWeek = function () {
+            var target  = new Date(this.valueOf());
+            var dayNr   = (this.getDay() + 6) % 7;
+            target.setDate(target.getDate() - dayNr + 3);
+            var firstThursday = target.valueOf();
+            target.setMonth(0, 1);
+            if (target.getDay() != 4) {
+                target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+            }
+            return 1 + Math.ceil((firstThursday - target) / 604800000);
+        };
+
+        var d1 = new Date();
+        numOfdaysPastSinceLastMonday = eval(d1.getDay()- 1);
+        d1.setDate(d1.getDate() - numOfdaysPastSinceLastMonday);
+        var weekNoToday = d1.getWeek();
+        var weeksInTheFuture = eval( weekNo - weekNoToday );
+        d1.setDate(d1.getDate() + eval( 7 * weeksInTheFuture ));
+        var rangeIsFrom = eval(d1.getMonth()+1) +"/" + d1.getDate() + "/" + d1.getFullYear();
+        d1.setDate(d1.getDate() + 6);
+        var rangeIsTo = eval(d1.getMonth()+1) +"/" + d1.getDate() + "/" + d1.getFullYear() ;
+        document.getElementById("dateRange").innerHTML = "Currently viewing the schedule for Week " + weekNo + " - " +  rangeIsFrom + " to "+rangeIsTo;
+        return
+    }
+        
+    async function geteid(empname){
+        const result = $.ajax({
+            url: '/employeeid',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({empname: empname}),
+            success: "success"
+        });
+    return result;
+    }
+    async function getsid(empschedule){
+        const result = $.ajax({
+            url: '/scheduleid',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({schedule: empschedule}),
+            success: "success"
+        });
+    return result;
+    }
+    async function getpkey(empschedule){
+        const result = $.ajax({
+            url: '/projectKey',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({schedule: empschedule}),
+            success: "success"
+        });
+    return result;
+    }
+    async function getphid(empschedule){
+        const result = $.ajax({
+            url: '/phaseID',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({schedule: empschedule}),
+            success: "success"
+        });
+    return result;
+    }
+    async function popschedule(empschedule){
+        const result = $.ajax({
+            url: '/schedule',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({schedule: empschedule}),
+            success: "success"
+        })
+    return result; 
+    }
+    async function pophourmap(empschedule){
+        const result = $.ajax({
+            url: '/pophourmap',
+            type: 'POST',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({schedule: empschedule}),
+        });
+    return result
+    }
+
+    async function Submit(){
+        for(name in names){
+            var name = names[name];
+            var employeerow = myTable.getColumnData(headerDict[name]);
+            /* var employeerow2  = myTable2.getColumnData(headerDict[name]); */
+            /* console.log(employeerow2); */ 
+            var count = employeerow.length;
+			for (var i = 0; i < count; i++) {
+                try{
+                    var item = employeerow[i];
+                    if(item != ''){
+                    /* if(item != ""){ */
+                        var employeerecord = {};
+                        var employeename = name;
+                        var inputHours = item;
+
+                        var row = i;
+
+                        var phase = myTable.getValueFromCoords(4, row);
+                        var pNum = myTable.getValueFromCoords(2, row);
+                        var fte = myTable.getValueFromCoords(8, row);
+
+                        employeerecord.name = employeename; 
+                        employeerecord.hours = inputHours;
+                        employeerecord.phaseName = phase;
+                        employeerecord.week = weekpicked;
+                        employeerecord.pnum = pNum;
+                        employeerecord.fte = fte;
+
+                        const sidResult = await getsid([employeerecord]);
+                        employeerecord.sid = sidResult;
+
+                        const eidResult = await geteid(employeename);
+                        employeerecord.eid = eidResult;
+
+                        const phidResult = await getphid([employeerecord]);
+                        employeerecord.phid = phidResult;
+
+                        const pkeyResult = await getpkey([employeerecord]);
+                        employeerecord.pkey = pkeyResult;
+
+                        const newhours = await popschedule([employeerecord]);
+                        if(employeerecord.sid == "NAN"){
+                            employeerecord.sid = newhours[0].insertId;
+                        } 
+
+                        $.ajax({
+                            url: '/pophourmap',
+                            type: 'POST',
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            data: JSON.stringify({schedule: employeerecord}),
+                        });                            
+                    }
+                }catch(err){
+                    console.log(err);
+                }
+            }
+        }
+        location.reload();
+    }
+    // ----------------------------------------
+    // ------------FTEs--------------------
+
+    function calcftes(){
+        var totalvariables = [];
+        document.getElementById("test").innerHTML = ((document.getElementById("fulltime").value)/40)*100;
+        var allftes = [];
+        $.ajax({
+            url: '/ftes',
+            async: false,
+            success: function(data) {
+                var chartdata;
+                var todaydate = new Date().getTime(); // todays date 
+                for (i in data){       
+                    if(data[i].start == '' || data[i].start === ''){
+                        // start date is either null or undefined 
+                        continue;
+                    }else if(data[i].end == '' || data[i].end === ''){
+                        // end date is either null or undefined 
+                        continue;
+                    }else if(Date.parse(data[i].end) <= todaydate){
+                        // project end date has passed
+                        continue;
+                    }
+                    else{
+                    
+                        var eststart = Date.parse(data[i].start); // estimated start date defined within the project data
+                        var estend = Date.parse(data[i].end); // estimaged end date defined within the project data
+
+                        if(eststart<new Date().getTime()){
+                            // if startweek has already passed, change to current week
+                            eststart = new Date().getTime();
+                        }
+
+                        var htotal = ((estend-eststart)/3600000)/24;
+                        var hweeks = htotal/7;
+                        var ftefactor = document.getElementById("fulltime").value;
+                        var hbudget = data[i].Hours_Budgeted;
+                        var hworked = data[i].Hours_Worked;
+                        var hremain = data[i].Hours_Remaining;
+                        var phaseid = data[i].id;
+                        var phasetitle = data[i].title;
+
+                        var fte = hremain/ftefactor;
+                        var fteweek = parseFloat((fte/hweeks).toFixed(3));
+
+                        var ftevariables = {};
+
+                        ftevariables.id = phaseid;
+                        ftevariables.data = fteweek;
+
+                        totalvariables.push(ftevariables);
+                    }
+                }
+            }
+        });
+        return totalvariables;
+    }
+    
+
+    function buildData(){
+        var ftemap = [];
+        var ftedata = calcftes();
+        var ganttdata=[];
+
+        $.ajax({
+            url: '/gantt_data',
+            dataType: 'json',
+            async: false,
+            success: function(data) {
+                for (i in data){
+                    ganttdata.push(data[i]);
+                };
+            }
+        });
+
+        for (i in ganttdata){
+            for (l in ftedata){
+                var phaseid = ftedata[l].id;
+                var phasefte = ftedata[l].data;
+                if (phaseid == ganttdata[i].id){
+                    ganttdata[i].FTE = phasefte;
+                    ftemap.push(ganttdata[i]);
+                }else{
+                    ganttdata[i].FTE = 0;
+                    ftemap.push(ganttdata[i]);
+                }
+            }
+        }
+        return ftemap;
+    }
+    
+    // ----------------------------------------
+    var totloaded = function(instance, obj) {
+        obj.hideIndex();
+        var count = headers.length; 
+        for(var i=0;i<=count;i++){
+            obj.headers[i].classList.add('employee');
+        }
+    }
+
+    var loaded = function(instance, obj) {
+ 
+        var unique = [];
+        var highlightkeys = [];
+        var highlightdict = {};
+        var highlight = [];
+
+        obj.hideIndex();
+
+        var totalrows = obj.rows.length;
+        for(var x=0; x<totalrows; x++){
+            var row = obj.getRowData(x);
+            var projnum = row[2];
+            if(unique.includes(projnum)){
+                highlightdict[projnum].push(x);
+            }else{
+                unique.push(projnum);
+                highlightdict[projnum]=[x];
+            }
+        }
+        for(var l=0; l<unique.length; l++){
+            if(l%2==0){
+                highlightkeys.push(unique[l]);
+            }
+        }
+        for(var i=0; i<highlightkeys.length; i++){
+            var highlightlist = highlightdict[highlightkeys[i]];
+            for(var x=0; x<highlightlist.length; x++){
+                highlight.push(highlightlist[x]);
+            }
+        }
+        for(var i=0; i<highlight.length; i++){
+            obj.rows[highlight[i]].classList.add('highlighted');
+        }
+        
+        var count = headers.length; 
+        for(var i=9;i<=count;i++){
+            obj.headers[i].classList.add('employee');
+        }
+        obj.columns[2].classList.add('phasetitle');
+    }
+
+    jexcel(document.getElementById('totals'), {
+        url: '/totals',
+        columns: total_headers,
+        columnResize:false,
+        onload: totloaded,
+        nestedHeaders:[
+            {
+                title: 'TOTALS',
+                colspan: total_headers.length,
+            },
+        ],
+    });
+
+    /* buildData(); */
+    
+    var myTable = jexcel(document.getElementById('spreadsheet'), {
+        url: '/gantt_data',
+        /* data: buildData(), */
+        columns: headers,
+        onload: loaded,
+        columnResize:false,
+        columnSorting:false,
+        nestedHeaders:[
+                {
+                    title: 'SCHEDULE',
+                    colspan: headers.length-2,
+                },
+        ]
+    });
+
+
+
+</script>
+

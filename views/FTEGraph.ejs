@@ -1,0 +1,335 @@
+<script src="https://bossanova.uk/jexcel/v3/jexcel.js"></script>
+<script src="https://bossanova.uk/jsuites/v2/jsuites.js"></script>
+<link rel="stylesheet" href="https://bossanova.uk/jexcel/v3/jexcel.css" type="text/css" />
+<link rel="stylesheet" href="https://bossanova.uk/jsuites/v2/jsuites.css" type="text/css" />
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+
+<link href="style.css" rel="stylesheet" type="text/css"/>
+
+<script type="text/javascript"src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<script>_u = _.noConflict();</script>
+
+<link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="css/style.css">
+
+<title>resourcemanager</title>
+
+<div class="wrapper d-flex align-items-stretch ">
+    <nav id="sidebar" class="active">
+        <div class="custom-menu">
+            <button type="button" id="sidebarCollapse" class="btn btn-primary">
+                <i class="fa fa-bars"></i>
+                <span class="sr-only">Toggle Menu</span>
+            </button>
+        </div>
+        <h1><a href="/auth/outlook" class="logo">Home</a></h1>
+        <ul class="list-unstyled components mb-5">
+        <li>
+            <a href="schedule"><span class="fa fa-sticky-note mr-3"></span> Scheduler</a>
+        </li>
+        <li>
+            <a href="weeklymatrix"><span class="fa fa-sticky-note mr-3"></span> Weekly Matrix</a>
+        </li>
+        <li>
+            <a href="EmployeeSearch"><span class="fa fa-sticky-note mr-3"></span> Employee Search</a>
+        </li>
+        <li>
+            <a href="edituser"><span class="fa fa-sticky-note mr-3"></span> Edit User</a>
+        </li>
+        <li>
+            <a href="emailer"><span class="fa fa-sticky-note mr-3"></span> Submit Ticket</a>
+        </li>
+        <li>
+            <a href="/auth/logout" class="bottom"><span class="fa fa-sticky-note mr-3"></span> Logout</a>
+        </li>
+        </ul>
+    </nav>
+    <div id="content" class="p-4 p-md-5 pt-5">
+        <!-- <input type='button' value='Sort column' onclick="myTable.hideIndex()"> -->
+        <div class="chartbody">
+            <h1 class="mainhead">FTE Graph</h1>
+            <div class="ftedesc">
+
+                <!-- One Full Time Equivalent (FTE) = 32 Hours Per Week (80% Utilization) -->
+
+                <p>One Full Time Equivelent (FTE) = </p>
+                <input onchange="calcutilization()" id="fulltime" class="noboarder_hours" type="number" name="fulltimehours" value=40>
+                <p>Hours Per Week (</p>
+                <p id="test">100</p>
+                <p>% Utilization)</p>
+            </div>
+            <div class="ftedesc">
+                <p>Currently viewing FTE Graph for </p>
+				<select onchange="calcutilization()" class="noboarder_durration" id="duration" value="duration" name="durrr">
+					<option value="threemonth" selected>Three Months</option>
+					<option value="sixmonth">Six Months</option>
+					<option value="year">One Year</option>
+					<option value="twoyear">Two Years</option>
+                </select>
+                <p>from current week</p>
+            </div>
+            <div class="Submit chartitem"><button onclick=reset();>Reset</button></div>
+            <p id="dateRange" class="dateRange"></p>
+            <div class="chartitem" id="container"></div>
+            <p id="weeknote">Notes:</p>
+            <p id="weeknote">Static grey line inicates total available FTEs</p>
+            <p id="weeknote">week numbers displayed are incremented from the current week.</p>
+        </div> 
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script  type="text/javascript" >
+
+function getWeekNumber(d) {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+    var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+    var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
+    var weeksToAdd = ((d.getFullYear()-new Date().getFullYear())*52)
+    return weekNo+weeksToAdd;
+}
+
+function reset(){
+    location.reload();
+}
+
+function getftetotal(){
+    var total = 0;
+    $.ajax({
+        url: '/availfte',
+        dataType: 'json',
+        async: false,
+        success: function(data) {
+            fte = data[0];
+            ftetotal = fte.total;
+            total = ftetotal;
+        }
+    }); 
+    return total;
+}  
+
+
+var result = getWeekNumber(new Date());
+var currentweeknum = parseInt(result);
+
+var ftemax;
+function calcutilization(){
+    var totalvariables = [];
+    var chartdata;
+    document.getElementById("test").innerHTML = ((document.getElementById("fulltime").value)/40)*100;
+    $.ajax({
+        url: '/ftes',
+        async: false,
+        success: function(data) {
+            var todaydate = new Date().getTime(); // todays date 
+            for (i in data){       
+                if(data[i].start == '' || data[i].start === ''){
+                    // start date is either null or undefined 
+                    continue;
+                }else if(data[i].end == '' || data[i].end === ''){
+                    // end date is either null or undefined 
+                    continue;
+                }else if(Date.parse(data[i].end) <= todaydate){
+                    // project end date has passed
+                    continue;
+                }
+                else{
+                    var durration = getDurration(); // user defined preview selection (three months, six months, year, two years)
+                    var eststart = Date.parse(data[i].start); // estimated start date defined within the project data
+                    var estend = Date.parse(data[i].end); // estimaged end date defined within the project data
+                    var startweek = getWeekNumber(new Date(eststart)); // convert the eststart to the week number
+                    var endweek = getWeekNumber(new Date(estend)); // convert the estend to the week number
+                    var stopweek = currentweeknum+durration; // declare the absolute end based off of the user defined durration
+                    var stopdate = getDateOfWeek(stopweek);
+
+                    if(startweek<currentweeknum){
+                        // if startweek has already passed, change to current week
+                        startweek = currentweeknum;
+                    }
+                    if(endweek>stopweek){
+                        endweek = stopweek;
+                    }
+
+                    var weekstogo = weeksBetween(startweek, endweek); // calculate the number of weeks between the start and end date. 
+
+                    var htotal = ((estend-eststart)/3600000)/24;
+                    var hweeks = htotal/7;
+                    var ftefactor = document.getElementById("fulltime").value;
+                    var hbudget = data[i].Hours_Budgeted;
+                    var hworked = data[i].Hours_Worked;
+                    var hremain = data[i].Hours_Remaining;
+                    var phaseid = data[i].id;
+                    var phasetitle = data[i].title;
+
+                    var fte = hremain/ftefactor;
+                    var fteweek = parseFloat((fte/hweeks).toFixed(3));
+
+                    for(var i=0; i<weekstogo; i++){
+                        if(fteweek>0){
+                            var ftevariables = {};
+                            var key = parseInt(startweek)+i; 
+
+                            ftevariables.week = key;
+                            ftevariables.data = fteweek;
+
+                            totalvariables.push(ftevariables); 
+                        }else{
+                            fteweek=0;
+                            var ftevariables = {};
+                            var key = parseInt(startweek)+i; 
+
+                            ftevariables.week = key;
+                            ftevariables.data = fteweek;
+
+                            totalvariables.push(ftevariables);  
+                        }
+                    }
+                }
+            }
+            $.ajax({
+                url: '/lodash',
+                type: 'POST',
+                async: false,
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                data: JSON.stringify(totalvariables),
+                success: function(data) {
+                    chartdata = data;
+                    
+                }
+            });
+        ftechart(chartdata);
+        }
+    });
+    var highest = Number.NEGATIVE_INFINITY;
+    var tmp;
+    for (var i=chartdata.length-1; i>=0; i--) {
+        tmp = chartdata[i].data;
+        if (tmp > highest) highest = tmp;
+    }  
+    ftemax = highest;
+    totutil = getftetotal();
+    var ploty;
+    if(ftemax>totutil){
+        ploty=ftemax;
+    }else{
+        ploty=totutil;
+    }
+    chart.addSeries({
+      data: [{
+            x: 0,
+            y: 0,
+            name: "Point2",
+            color: "#00FF00"
+        }, {
+            x: 0,
+            y: ploty,
+            name: "Point1",
+            color: "#FF00FF"
+        }],
+      showInLegend: false,
+      type: 'scatter',
+      marker: {
+        enabled: false
+      },
+      enableMouseTracking: false,
+    })
+    }
+function getDateOfWeek(w) {
+    var y = getCurrentYear()+(Math.round(w/52)-1); 
+    var d = (1 + (w - 1) * 7); // 1st of January + 7 days for each week
+    return new Date(y, 0, d).getTime();
+}
+function getCurrentYear() {
+    var d = new Date();
+    var n = d.getFullYear();
+    return n;
+}
+function weeksBetween(w1, w2) {
+    var diff = (w2-w1);
+    return diff; 
+}
+function clearchart(){
+    while( chart.series.length > 0 ) {
+        chart.series[0].remove( false );
+    }
+    chart.xAxis[0].update();
+    chart.redraw();
+}
+function ftechart(chartdata){
+    var ftefactor = document.getElementById("fulltime").value
+
+    var weeks = [];
+    var nums = [];
+
+    for(var week in chartdata){
+        weeks.push('week-'+chartdata[week].week);
+        nums.push(chartdata[week].data)
+    }
+    chart.xAxis[0].setCategories(weeks);
+    chart.addSeries({name: ftefactor+'-HPW', data: nums});
+    chart.redraw();
+}
+function getDurration(){
+    var selection = document.getElementById("duration").value;
+    if(selection == "threemonth"){
+        var weeks = 12;
+        return weeks;
+    }else if(selection == "sixmonth"){
+        var weeks = 24;
+        return weeks;
+    }else if(selection == "year"){
+        var weeks = 52;
+        return weeks;
+    }else if(selection == "twoyear"){
+        var weeks = 104;
+        return weeks;
+    }
+}
+
+/* 
+    total expected utilization for each employee entered into the database
+    sum of utilizaiton of employees
+*/
+
+var chart = null;
+chart = Highcharts.chart('container', {
+    chart: {
+        height: 700,
+    },
+    title: {
+        text: 'Full Time Equivelents',
+        x: -20 //center
+    },
+    subtitle: {
+        text: 'displaying filtered projects',
+        x: -20
+    },
+    yAxis: {
+        title: {
+            text: 'Full Time Equivalent (FTE)'
+        },
+        plotLines: [{
+            value: getftetotal(),/* this is the line that will reflect the total available utilization */
+            width: 4, 
+            color: '#808080'
+        }]
+    },
+    tooltip: {
+        valueSuffix: ' FTE'
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle',
+        borderWidth: 0
+    },    
+
+});
+calcutilization();
+</script>
